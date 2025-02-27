@@ -9,15 +9,10 @@ from chromadb import PersistentClient
 from dotenv import load_dotenv
 
 
-    load_dotenv()
-    openai_api_key = os.getenv("OPENAI_API_KEY")
+load_dotenv()
 
-    if not openai_api_key:
-        raise ValueError("OpenAI API 키를 찾을 수 없습니다.")
 class AIModel:
     
-
-
     # embedding_function = OpenAIEmbeddings()
     chroma_store = Chroma(
         embedding_function=OpenAIEmbeddings(),
