@@ -6,7 +6,7 @@ app = FastAPI()
 
 
 @app.get("/")
-def root():
+def read_root():
     return {"message": "connection online"}
 
 # model = main.AIModel()
@@ -15,4 +15,10 @@ def root():
 # @app.post("/recommend/")
 # def recommend_bakery(prompt: str = Query()):
 #     model.request(prompt)
+
+
+# FastAPI 실행 설정
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=8000) 
 
