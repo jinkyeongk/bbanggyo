@@ -9,10 +9,10 @@ app = FastAPI()
 def root():
     return {"message": "connection online"}
 
-model = main.AIModel()
+# model = main.AIModel()
 
-# OpenAI API와 ChromaDB를 활용한 추가 엔드포인트 예시
-@app.post("/recommend/")
-def recommend_bakery(prompt: str = Query()):
-    model.request(prompt)
+# # OpenAI API와 ChromaDB를 활용한 추가 엔드포인트 예시
+# @app.post("/recommend/")
+# def recommend_bakery(prompt: str = Query()):
+#     model.request(prompt)
 
