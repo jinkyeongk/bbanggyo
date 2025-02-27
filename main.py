@@ -8,31 +8,67 @@ from chromadb import PersistentClient
 
 from dotenv import load_dotenv
 
-load_dotenv()
-openai_api_key = os.getenv("OPENAI_API_KEY")
 
-if not openai_api_key:
-    raise ValueError("OpenAI API 키를 찾을 수 없습니다.")
+class AIModel:
+    
+    load_dotenv()
+    openai_api_key = os.getenv("OPENAI_API_KEY")
 
-
-# embedding_function = OpenAIEmbeddings()
-chroma_store = Chroma(
-    embedding_function=OpenAIEmbeddings(),
-    persist_directory="chroma_db",  # 기존 저장된 Chroma DB 경로
-    collection_name="bakery_vector_store"  # 기존 컬렉션 이름
-)
-
-client = PersistentClient(path="./chroma_db") 
-
-collection = client.get_collection("bakery_vector_store")  # 올바른 컬렉션 이름으로 변경
-print(collection.count())  # 저장된 벡터 개수 출력
-
-docs = collection.get()  # 컬렉션의 모든 데이터 가져오기
-print(f"저장된 벡터 개수: {len(docs['ids'])}")
-#print(docs)  # 저장된 데이터 내용 확인
+    if not openai_api_key:
+        raise ValueError("OpenAI API 키를 찾을 수 없습니다.")
 
 
-class AIModel():
+    # embedding_function = OpenAIEmbeddings()
+    chroma_store = Chroma(
+        embedding_function=OpenAIEmbeddings(),
+        persist_directory="chroma_db",  # 기존 저장된 Chroma DB 경로
+        collection_name="bakery_vector_store"  # 기존 컬렉션 이름
+    )
+
+    client = PersistentClient(path="./chroma_db") 
+
+    collection = client.get_collection("bakery_vector_store")  # 올바른 컬렉션 이름으로 변경
+    #print(collection.count())  # 저장된 벡터 개수 출력
+
+    docs = collection.get()  # 컬렉션의 모든 데이터 가져오기
+    #print(f"저장된 벡터 개수: {len(docs['ids'])}")
+    #print(docs)  # 저장된 데이터 내용 확인
+    
+    def __init__(self, model_name="gpt-4o-mini", model_provider="openai"):
+        # ✅ LangGraph와 LangChain에서 사용할 모델 초기화
+        self.model = init_chat_model(model_name, model_provider=model_provider)
+        self.llm = ChatOpenAI(model_name=model_name)
+
+        # ✅ LangChain용 Prompt 설정
+        self.prompt_template = ChatPromptTemplate.from_messages(
+            [
+                ("system", "You are a helpful assistant. Answer all questions to the best of your ability in {language}."),
+                MessagesPlaceholder(variable_name="history"),
+                ("human", "{question}"),
+            ]
+        )
+
+        # ✅ LangGraph는 MemorySaver 사용 (SQLiteSaver 제거)
+        self.memory = MemorySaver()
+
+        # ✅ SQLite 기반 대화 기록 저장
+        self.chat_message_history = SQLChatMessageHistory(
+            session_id="test_session_id", connection_string="sqlite:///sqlite.db"
+        )
+
+        # ✅ LangGraph 워크플로우 설정
+        self.workflow = self._build_workflow()
+        self.app = self.workflow.compile(checkpointer=self.memory)
+
+        # ✅ LangChain의 `RunnableWithMessageHistory`로 RAG 적용 가능하도록 설정
+        self.chain = self.prompt_template | self.llm  # |를 통해 prompt_template과 llm을 연결
+        self.chain_with_history = RunnableWithMessageHistory(
+            self.chain,
+            lambda session_id: SQLChatMessageHistory(session_id=session_id, connection_string="sqlite:///sqlite.db"),
+            input_messages_key="question",
+            history_messages_key="history",
+        )
+        
     def request(personality_query):
 
         # 2. Chroma 벡터스토어에서 사용자 성격과 유사한 빵집 문서를 검색 (예: 상위 3개)
