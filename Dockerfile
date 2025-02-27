@@ -14,3 +14,4 @@ COPY main.py .
 
 # FastAPI 실행 (uvicorn 사용)
 CMD ["uvicorn", "index:app", "--host", "0.0.0.0", "--port", "3000"]
+
