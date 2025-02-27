@@ -17,8 +17,5 @@ def read_root():
 #     model.request(prompt)
 
 
-# FastAPI 실행 설정
-if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000) 
+
 
